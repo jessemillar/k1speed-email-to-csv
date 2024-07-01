@@ -51,6 +51,8 @@
         downloadCSV(sessionCSV, `Driver Info - ${datetime}.csv`);
         console.log(lapTimesCSV);
         downloadCSV(lapTimesCSV, `Lap Times - ${datetime}.csv`);
+
+        alert("CSV files have been downloaded. Check your downloads folder.");
       }
 
       function convertDate(sessionInfoLine) {
