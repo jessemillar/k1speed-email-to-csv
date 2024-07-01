@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>K1 Speed Results Email to CSV Converter</title>
+    <script>
+      function convertToCSV() {
+        const textareaContent = document.getElementById("inputTextarea").value;
+        const lines = textareaContent.split("\n");
+        const sessionInfoLine = lines.find((line) => line.startsWith("LAPTIMES -"));
+        const lapTimesLine = lines.find((line) => line.includes("(") && line.includes(")") && line.includes("|"));
+
+        // Process session info
+        const datetime = convertDate(sessionInfoLine);
+
+        // Find Jesse Millar's finishing position
+        const jesseMillarLine = lines.find((line) => line.includes("Jesse Millar"));
+        const jesseMillarPosition = jesseMillarLine ? parseInt(jesseMillarLine.split("\t")[0], 10) : "Unknown";
+
+        const numberOfDrivers = lines[lines.length - 1].split(/\s+/)[0];
+
+        const sessionCSV = `Track,Layout,Date,Position,Drivers\n` + `K1 Speed Rogers - ,T1,"${datetime}",${jesseMillarPosition},${numberOfDrivers}\n`;
+
+        // Extract and process driver info lines
+        const driverInfoLines = lines.filter((line) => line.match(/^\d+\s/)); // Matches lines starting with a number and a space
+        let driverInfoCSV = "Position,Racer,Best Time,Best Lap,Laps,Avg,Gap,K1RS,K1RS Change\n";
+        driverInfoLines.forEach((line) => {
+          const parts = line.split(/\s{2,}|\t/); // Splits by two or more spaces or a tab
+          // Extract K1RS change, assuming it's always formatted as "(+number)" at the end of the K1RS field
+          const k1rsChangeMatch = parts[parts.length - 1].match(/\((\+\d+)\)/);
+          const k1rsChange = k1rsChangeMatch ? parseInt(k1rsChangeMatch[1], 10) : ""; // Extracts the number, converts to integer
+          parts[parts.length - 1] = parts[parts.length - 1].replace(/\s*\(\+\d+\)/, ""); // Removes the K1RS change from the K1RS field
+          parts.push(k1rsChange.toString()); // Adds K1RS change as a separate column
+          const csvRow = parts.join(",");
+          driverInfoCSV += csvRow + "\n";
+        });
+
+        // Process lap times
+        const lapTimesMatches = lapTimesLine.match(/\((\d+)\)\s([\d.]+)/g);
+        let lapTimesCSV = "Lap,Lap Time\n";
+        lapTimesMatches.forEach((match) => {
+          const [lap, time] = match.match(/(\d+)\)\s([\d.]+)/).slice(1);
+          const lapNumber = parseInt(lap, 10); // Convert lap to number to remove leading zeros
+          lapTimesCSV += `${lapNumber},${time}\n`;
+        });
+
+        // Create and download the CSV files
+        console.log(sessionCSV);
+        downloadCSV(sessionCSV, `Session Info - ${datetime}.csv`);
+        console.log(driverInfoCSV);
+        downloadCSV(sessionCSV, `Driver Info - ${datetime}.csv`);
+        console.log(lapTimesCSV);
+        downloadCSV(lapTimesCSV, `Lap Times - ${datetime}.csv`);
+      }
+
+      function convertDate(sessionInfoLine) {
+        // Extract the date and time parts from the sessionInfoLine
+        const parts = sessionInfoLine.split(/\s+/);
+        const dateParts = parts[4].split("/");
+        // Remove leading zeros from the hour and combine with AM/PM part
+        const hourWithoutLeadingZeros = parseInt(parts[5], 10).toString(); // Removes leading zeros
+        const timePart = hourWithoutLeadingZeros + ":" + parts[5].split(":")[1] + " " + parts[6]; // Assuming parts[6] contains "AM" or "PM"
+
+        // Convert the date parts into a more standard format
+        const year = "20" + dateParts[2]; // Assuming the year is in two digits and starts from 2000
+        const month = dateParts[0];
+        const day = dateParts[1];
+
+        // Month names array for converting month number to month name
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const monthName = monthNames[parseInt(month, 10) - 1];
+
+        // Format the date into the desired output format
+        return `${monthName} ${day}, ${year} ${timePart}`;
+      }
+
+      function downloadCSV(content, filename) {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+      }
+    </script>
+  </head>
+  <body style="margin: 0; padding: 10px">
+    <p>
+      Paste the content of your K1 Speed "Your Race Results" email into the text field below and click "Convert" to download .csv files containing the data in the email. This makes it easier to
+      collect and analyze your results over time. The text field expects the pasted text to start with the line similar to "LAPTIMES - Miami T1 06/20/24 01:43 PM" and end with the line containing the
+      last racer in the session.
+    </p>
+    <textarea id="inputTextarea" rows="10" style="width: calc(100% - 10px)"></textarea><br />
+    <button onclick="convertToCSV()">Convert</button>
+  </body>
+</html>
