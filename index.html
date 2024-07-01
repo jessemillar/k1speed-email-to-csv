@@ -23,7 +23,7 @@
 
         // Extract and process driver info lines
         const driverInfoLines = lines.filter((line) => line.match(/^\d+\s/)); // Matches lines starting with a number and a space
-        let driverInfoCSV = "Position,Racer,Best Time,Best Lap,Laps,Avg,Gap,K1RS,K1RS Change\n";
+        let driverInfoCSV = "Position,Driver Name,Best Time,Best Lap,Laps,Avg Lap,Gap,K1RS,K1RS Change\n";
         driverInfoLines.forEach((line) => {
           const parts = line.split(/\s{2,}|\t/); // Splits by two or more spaces or a tab
           // Extract K1RS change, assuming it's always formatted as "(+number)" at the end of the K1RS field
