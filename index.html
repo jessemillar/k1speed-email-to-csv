@@ -7,11 +7,15 @@
       function convertToCSV() {
         const textareaContent = document.getElementById("inputTextarea").value;
         const lines = textareaContent.split("\n");
-        const sessionInfoLine = lines.find((line) => line.startsWith("LAPTIMES -"));
         const lapTimesLine = lines.find((line) => line.includes("(") && line.includes(")") && line.includes("|"));
+        const sessionInfoLine = lines.find((line) => line.startsWith("LAPTIMES -"));
+        const sessionInfo = sessionInfoLine.match(/LAPTIMES - (\w+) (\w+) (\d{2}\/\d{2}\/\d{2} \d{2}:\d{2} [AP]M)/);
+        const sessionLocation = sessionInfo[1];
+        const sessionLayout = sessionInfo[2];
+        const sessionTime = sessionInfo[3];
 
         // Process session info
-        const datetime = convertDate(sessionInfoLine);
+        const datetime = convertDate(sessionTime);
 
         // Find Jesse Millar's finishing position
         const jesseMillarLine = lines.find((line) => line.includes("Jesse Millar"));
@@ -19,7 +23,7 @@
 
         const numberOfDrivers = lines[lines.length - 1].split(/\s+/)[0];
 
-        const sessionCSV = `Track,Layout,Date,Position,Drivers\n` + `K1 Speed Rogers - ,T1,"${datetime}",${jesseMillarPosition},${numberOfDrivers}\n`;
+        const sessionCSV = `Track,Layout,Date,Position,Drivers\n` + `K1 Speed ${sessionLocation} - ,${sessionLayout},${datetime},${jesseMillarPosition},${numberOfDrivers}\n`;
 
         // Extract and process driver info lines
         const driverInfoLines = lines.filter((line) => line.match(/^\d+\s/)); // Matches lines starting with a number and a space
@@ -55,25 +59,24 @@
         alert("CSV files have been downloaded. Check your downloads folder.");
       }
 
-      function convertDate(sessionInfoLine) {
+      function convertDate(sessionTime) {
+        console.log(sessionTime);
         // Extract the date and time parts from the sessionInfoLine
-        const parts = sessionInfoLine.split(/\s+/);
-        const dateParts = parts[4].split("/");
-        // Remove leading zeros from the hour and combine with AM/PM part
-        const hourWithoutLeadingZeros = parseInt(parts[5], 10).toString(); // Removes leading zeros
-        const timePart = hourWithoutLeadingZeros + ":" + parts[5].split(":")[1] + " " + parts[6]; // Assuming parts[6] contains "AM" or "PM"
+        const [datePart, timePart, amPm] = sessionTime.split(/\s+/);
+        const [month, day, yearSuffix] = datePart.split("/");
+        const [hour, minute] = timePart.split(":");
 
-        // Convert the date parts into a more standard format
-        const year = "20" + dateParts[2]; // Assuming the year is in two digits and starts from 2000
-        const month = dateParts[0];
-        const day = dateParts[1];
+        // Construct a full year and adjust for CST to UTC (+5 hours)
+        const year = "20" + yearSuffix;
+        const hourIn24Format = parseInt(hour) + (amPm.toUpperCase() === "PM" ? 12 : 0);
+        const dateInCST = new Date(`${year}-${month}-${day}T${hourIn24Format}:${minute}:00-05:00`);
 
-        // Month names array for converting month number to month name
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const monthName = monthNames[parseInt(month, 10) - 1];
+        // Convert to UTC
+        const dateInUTC = new Date(dateInCST.toISOString());
 
         // Format the date into the desired output format
-        return `${monthName} ${day}, ${year} ${timePart}`;
+        const output = dateInUTC.toISOString().replace(/\.\d+Z$/, "Z"); // Remove milliseconds
+        return output;
       }
 
       function downloadCSV(content, filename) {
@@ -88,8 +91,8 @@
   <body style="margin: 0; padding: 10px">
     <p>
       Paste the content of your K1 Speed "Your Race Results" email into the text field below and click "Convert" to download .csv files containing the data in the email. This makes it easier to
-      collect and analyze your results over time. The text field expects the pasted text to start with the line similar to "LAPTIMES - Miami T1 06/20/24 01:43 PM" and end with the line containing the
-      last racer in the session. The HTML is hardcoded for Jesse Millar's name and K1 Speed location. You'll need to change the code if you want it to work for you.
+      collect and analyze your results over time.<br /><br />The text field expects the pasted text to start with the line similar to "LAPTIMES - Miami T1 06/20/24 01:43 PM" and end with the line
+      containing the last racer in the session. The HTML is hardcoded for Jesse Millar's name and K1 Speed location. You'll need to change the code if you want it to work for you.
     </p>
     <textarea id="inputTextarea" rows="10" style="width: calc(100% - 10px)"></textarea><br />
     <button onclick="convertToCSV()">Convert</button>
