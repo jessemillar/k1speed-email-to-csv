@@ -8,7 +8,7 @@
         const textareaContent = document.getElementById("inputTextarea").value;
         const lines = textareaContent.split("\n");
         const lapTimesLine = lines.find((line) => line.includes("(") && line.includes(")") && line.includes("|"));
-        const sessionInfoLine = lines.find((line) => line.startsWith("LAPTIMES -"));
+        const sessionInfoLine = lines.find((line) => line.includes("LAPTIMES -"));
         const sessionInfo = sessionInfoLine.match(/LAPTIMES - (\w+) (\w+) (\d{2}\/\d{2}\/\d{2} \d{2}:\d{2} [AP]M)/);
         const sessionLocation = sessionInfo[1];
         const sessionLayout = sessionInfo[2];
@@ -68,7 +68,8 @@
 
         // Construct a full year and adjust for CST to UTC (+5 hours)
         const year = "20" + yearSuffix;
-        const hourIn24Format = parseInt(hour) + (amPm.toUpperCase() === "PM" ? 12 : 0);
+        const hourIn24Format = hour === "12" ? (amPm.toUpperCase() === "AM" ? 0 : 12) : parseInt(hour) + (amPm.toUpperCase() === "PM" && hour !== "12" ? 12 : 0);
+        console.log(`${year}-${month}-${day}T${hourIn24Format}:${minute}:00-05:00`);
         const dateInCST = new Date(`${year}-${month}-${day}T${hourIn24Format}:${minute}:00-05:00`);
 
         // Convert to UTC
@@ -92,7 +93,7 @@
     <p>
       Paste the content of your K1 Speed "Your Race Results" email into the text field below and click "Convert" to download .csv files containing the data in the email. This makes it easier to
       collect and analyze your results over time.<br /><br />The text field expects the pasted text to start with the line similar to "LAPTIMES - Miami T1 06/20/24 01:43 PM" and end with the line
-      containing the last racer in the session. The HTML is hardcoded for Jesse Millar's name and K1 Speed location. You'll need to change the code if you want it to work for you.
+      containing the last racer in the session. The HTML is hardcoded for Jesse Millar's name. You'll need to change the code if you want it to work for you.
     </p>
     <textarea id="inputTextarea" rows="10" style="width: calc(100% - 10px)"></textarea><br />
     <button onclick="convertToCSV()">Convert</button>
