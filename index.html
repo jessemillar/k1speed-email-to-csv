@@ -21,9 +21,7 @@
         const jesseMillarLine = lines.find((line) => line.includes("Jesse Millar"));
         const jesseMillarPosition = jesseMillarLine ? parseInt(jesseMillarLine.split("\t")[0], 10) : "Unknown";
 
-        const numberOfDrivers = lines[lines.length - 1].split(/\s+/)[0];
-
-        const sessionCSV = `Track,Layout,Date,Position,Drivers\n` + `K1 Speed ${sessionLocation} - ,${sessionLayout},${datetime},${jesseMillarPosition},${numberOfDrivers}\n`;
+        const sessionCSV = `Track,Layout,Date,Position\n` + `K1 Speed ${sessionLocation} - ,${sessionLayout},${datetime},${jesseMillarPosition}\n`;
 
         // Extract and process driver info lines
         const driverInfoLines = lines.filter((line) => line.match(/^\d+\s/)); // Matches lines starting with a number and a space
